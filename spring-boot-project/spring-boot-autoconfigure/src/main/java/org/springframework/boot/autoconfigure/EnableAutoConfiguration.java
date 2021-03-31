@@ -79,7 +79,11 @@ import org.springframework.core.io.support.SpringFactoriesLoader;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
+
+// 自动配置包：会把@SpringbootApplication注解标注的类所在包名拿到，对该包及其子包进行扫描
 @AutoConfigurationPackage
+
+// 将所有符合条件的@Configuration配置都加载到当前SpringBoo创建并使用的IoC容器中。
 @Import(AutoConfigurationImportSelector.class)
 public @interface EnableAutoConfiguration {
 

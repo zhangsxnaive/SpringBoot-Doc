@@ -63,6 +63,7 @@ import org.springframework.util.StringUtils;
  * auto-configuration}. This class can also be subclassed if a custom variant of
  * {@link EnableAutoConfiguration @EnableAutoConfiguration} is needed.
  *
+ * 将所有符合条件的@Configuration配置都加载到当前SpringBoo创建并使用的IoC容器中。
  * @author Phillip Webb
  * @author Andy Wilkinson
  * @author Stephane Nicoll
@@ -91,11 +92,16 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 
 	private ConfigurationClassFilter configurationClassFilter;
 
+	/**
+	 * 需要导入哪些方法
+	 */
 	@Override
 	public String[] selectImports(AnnotationMetadata annotationMetadata) {
+		// 判断EnableAutoConfiguration是否开启
 		if (!isEnabled(annotationMetadata)) {
 			return NO_IMPORTS;
 		}
+		// 获取哪些需要自动配置的类
 		AutoConfigurationEntry autoConfigurationEntry = getAutoConfigurationEntry(annotationMetadata);
 		return StringUtils.toStringArray(autoConfigurationEntry.getConfigurations());
 	}
@@ -119,12 +125,17 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		if (!isEnabled(annotationMetadata)) {
 			return EMPTY_ENTRY;
 		}
+		// 获取注解的属性
 		AnnotationAttributes attributes = getAttributes(annotationMetadata);
+		// 加载META-INF/spring.factories文件中所有org.springframework.boot.autoconfigure.EnableAutoConfiguration下的所有值（自动配置类的全限定类名）
 		List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
+		// 去掉重复的
 		configurations = removeDuplicates(configurations);
+		// 从注解属性中去除掉不用自动配置的类
 		Set<String> exclusions = getExclusions(annotationMetadata, attributes);
 		checkExcludedClasses(configurations, exclusions);
 		configurations.removeAll(exclusions);
+		// 通过ConfigurationClassFilter去过滤一些没有达成自动配置条件的配置类（通过spring.factories中的filter和META-INF/spring-autoconfigure-meta.properties中过滤条件）
 		configurations = getConfigurationClassFilter().filter(configurations);
 		fireAutoConfigurationImportEvents(configurations, exclusions);
 		return new AutoConfigurationEntry(configurations, exclusions);
@@ -175,6 +186,8 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 	 * @return a list of candidate configurations
 	 */
 	protected List<String> getCandidateConfigurations(AnnotationMetadata metadata, AnnotationAttributes attributes) {
+		// getSpringFactoriesLoaderFactoryClass的返回值为EnableAutoConfiguration.class
+		// 就是要返回META-INF/spring.factories中key为EnableAutoConfiguration.class下的值
 		List<String> configurations = SpringFactoriesLoader.loadFactoryNames(getSpringFactoriesLoaderFactoryClass(),
 				getBeanClassLoader());
 		Assert.notEmpty(configurations, "No auto configuration classes found in META-INF/spring.factories. If you "
@@ -358,6 +371,7 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		private final List<AutoConfigurationImportFilter> filters;
 
 		ConfigurationClassFilter(ClassLoader classLoader, List<AutoConfigurationImportFilter> filters) {
+			// 获取自动配置类加载的条件供AutoConfigurationImportFilter过滤器过滤。过滤器被写在spring.factories中
 			this.autoConfigurationMetadata = AutoConfigurationMetadataLoader.loadMetadata(classLoader);
 			this.filters = filters;
 		}

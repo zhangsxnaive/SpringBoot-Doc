@@ -38,6 +38,7 @@ import org.springframework.context.annotation.Import;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
+// 将实现了ImportBeanDefinitionRegistrar接口的AutoConfigurationPackages.Registrar导入，这个类中会将该注解注解的类的所在包名拿到，然后将该包及其子包放到Spring容器中进行扫描
 @Import(AutoConfigurationPackages.Registrar.class)
 public @interface AutoConfigurationPackage {
 
